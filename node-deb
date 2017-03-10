@@ -50,6 +50,7 @@ group=
 package_description=
 package_maintainer=
 package_dependencies=
+package_architecture=
 node_deb_version=$(jq -r '.version' "$node_deb_dir/package.json")
 # note: init is also injected
 
@@ -151,6 +152,12 @@ while [ -n "$1" ]; do
       package_dependencies="$value"
       shift
       ;;
+    --package-architecture)
+      # HELPDOC: The architecture for the Debian package (default: 'node_deb.architecture')
+      zero_check "$value" "$param"
+      package_architecture="$value"
+      shift
+      ;;
     --start-command)
       # HELPDOC: The start command to use (default: 'node_deb.start_command' then 'scripts.start' from package.json)
       start_command="$value"
@@ -207,6 +214,12 @@ while [ -n "$1" ]; do
       # HELPDOC: Override executable template (default: 'node_deb.templates.executable' from package.json then built-in)
       zero_check "$value" "$param"
       template_executable="$value"
+      shift
+      ;;
+    --template-preinst)
+      # HELPDOC: Override maintainer script preinst template (default: 'node_deb.templates.preinst' from package.json then built-in)
+      zero_check "$value" "$param"
+      template_preinst="$value"
       shift
       ;;
     --template-postinst)
@@ -324,6 +337,17 @@ if [ -z "$package_maintainer" ]; then
 fi
 log_debug "The package maintainer has been set to: $package_maintainer"
 
+# Set the packge architecture
+if [ -z "$package_architecture" ]; then
+  package_architecture=$(jq -r '.node_deb.architecture' package.json)
+  if [[ "$package_architecture" == 'null' ]]; then
+    package_architecture=""
+  else
+    package_architecture="$package_architecture"
+  fi
+fi
+log_debug "The package architecture has been set to: $package_architecture"
+
 # Set the packge dependencies
 if [ -z "$package_dependencies" ]; then
   package_dependencies=$(jq -r '.node_deb.dependencies' package.json)
@@ -409,6 +433,16 @@ if [ -z "$template_executable" ]; then
 fi
 : ${template_executable:="$node_deb_dir/templates/executable"}
 log_debug "The executable template has been set to: $template_executable"
+
+# Set preinst template
+if [ -z "$template_preinst" ]; then
+  template_preinst=$(jq -r '.node_deb.templates.preinst' package.json)
+  if [[ "$template_preinst" == 'null' ]]; then
+    template_preinst=''
+  fi
+fi
+: ${template_postinst:="$node_deb_dir/templates/postinst"}
+log_debug "The postinst template has been set to: $template_postinst"
 
 # Set postinst template
 if [ -z "$template_postinst" ]; then
@@ -519,6 +553,7 @@ replace_vars() {
     -e "s/{{ node_deb_start_command }}/$(escape $start_command)/g" \
     -e "s/{{ node_deb_package_description }}/$(escape $package_description)/g" \
     -e "s/{{ node_deb_package_maintainer }}/$(escape $package_maintainer)/g" \
+    -e "s/{{ node_deb_package_architecture }}/$(escape $package_architecture)/g" \
     -e "s/{{ node_deb_package_dependencies }}/$(escape $package_dependencies)/g" \
     -e "s/{{ node_deb_user }}/$(escape $user)/g" \
     -e "s/{{ node_deb_group }}/$(escape $group)/g" \
@@ -530,6 +565,7 @@ replace_vars() {
 
 log_info 'Rendering templates'
 replace_vars "$template_control" "$deb_dir/DEBIAN/control"
+replace_vars "$template_preinst" "$deb_dir/DEBIAN/preinst"
 replace_vars "$template_postinst" "$deb_dir/DEBIAN/postinst"
 replace_vars "$template_postrm" "$deb_dir/DEBIAN/postrm"
 replace_vars "$template_prerm" "$deb_dir/DEBIAN/prerm"
