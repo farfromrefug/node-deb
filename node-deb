@@ -441,8 +441,8 @@ if [ -z "$template_preinst" ]; then
     template_preinst=''
   fi
 fi
-: ${template_postinst:="$node_deb_dir/templates/postinst"}
-log_debug "The postinst template has been set to: $template_postinst"
+: ${template_preinst:="$node_deb_dir/templates/preinst"}
+log_debug "The preinst template has been set to: $template_preinst"
 
 # Set postinst template
 if [ -z "$template_postinst" ]; then
