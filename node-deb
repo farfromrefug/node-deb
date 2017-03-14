@@ -341,7 +341,7 @@ log_debug "The package maintainer has been set to: $package_maintainer"
 if [ -z "$package_architecture" ]; then
   package_architecture=$(jq -r '.node_deb.architecture' package.json)
   if [[ "$package_architecture" == 'null' ]]; then
-    package_architecture=""
+    package_architecture="all"
   else
     package_architecture="$package_architecture"
   fi
@@ -504,7 +504,7 @@ fi
 : ${template_default_variables:="$node_deb_dir/templates/default"}
 log_debug "The default variables file template has been set to: $template_default_variables"
 
-deb_dir="${package_name}_${package_version}_all"
+deb_dir="${package_name}_${package_version}_${package_architecture}"
 
 finish() {
   if [ $no_delete_temp -ne 1 ]; then
