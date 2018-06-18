@@ -7,8 +7,7 @@
     "node-deb": "./node-deb"
   },
   "scripts": {
-    "start": "./node-deb",
-    "test": "./test.sh --clean-first"
+    "start": "./node-deb"
   },
   "repository": {
     "type": "git",
